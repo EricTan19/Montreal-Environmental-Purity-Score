@@ -1,305 +1,512 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState } from 'react';
 import './App.css';
-let value1, value2, value3, value4, value5, value6, value7, value8;
+import {
+  API_BASE_URL,
+  approveComputerSession,
+  continueComputerSession,
+  fetchComputerSession,
+  startComputerSession,
+  submitAnswers,
+} from './api';
 
-const questions = [
-  "What’s your preferred method of transportation and how often do you use it?",
-  "How many times do you travel by airplane per year?",
-  "Do you compost?",
-  "How often do you recycle?",
-  "What is your diet?"
+const transportOptions = [
+  'Combustion Engine Vehicle',
+  'Electric Powered Car',
+  'Public Transport',
+  'Bicycle',
 ];
 
-const transportationModes = [
-  "Combustion Engine Vehicle",
-  "Electric Powered Car",
-  "Public Transport",
-  "Bicycle"
-];
+const flightOptions = ['0', '1', '2', '3', '4 or more'];
+const compostOptions = ['Yes', 'No'];
+const dietOptions = ['Vegan', 'Vegetarian', 'Other diet'];
 
-const numAirplane = [
-  "0",
-  "1",
-  "2",
-  "3",
-  "4 or more"
-]
+const initialAnswers = {
+  transportMode: 'Public Transport',
+  transportFrequency: '0.5',
+  flights: '0',
+  compost: 'Yes',
+  recycleFrequency: '0.5',
+  diet: 'Vegetarian',
+};
 
-const radioCompost = [
-  "Yes",
-  "No"
-]
+const initialComputerForm = {
+  url: 'http://127.0.0.1:3000',
+  task: 'Open the local Montreal Environmental Purity Score app, complete the questionnaire with representative answers, and identify the most obvious UI, copy, or flow defects. Stay on localhost and stop when approval is required.',
+  model: 'computer-use-preview',
+  display_width: 1280,
+  display_height: 900,
+  max_steps_per_run: 8,
+  headless: true,
+  allowed_hosts: ['127.0.0.1', 'localhost'],
+};
 
-const radioDiet = [
-  "Vegan",
-  "Vegeterian",
-  "Other diet"
-]
+function toImageUrl(path) {
+  if (!path) {
+    return '';
+  }
 
-// Question Component
-const Question = memo(({ question, children }) => (
-  <div>
-    <h1>{question}</h1>
-    {children}
-  </div>
-));
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
 
-// RadioGroup Component
-const RadioGroup = memo(({ options, selectedValue, onChange }) => (
-  <div className="radio-group">
-    {options.map((option, index) => (
-      <label key={index}>
-        <input
-          type="radio"
-          value={option}
-          checked={selectedValue === option}
-          onChange={onChange}
-        />
-        {option}
-      </label>
-    ))}
-  </div>
-));
+  return `${API_BASE_URL}${path}`;
+}
 
-// RangeSlider Component
-const RangeSlider = memo(({ value, onChange }) => (
-  <div className="slider-container">
-    <div className="labels">
-      <span>Rarely</span>
-      <span>Moderate</span>
-      <span>Often</span>
-    </div>
-    <input
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value={value}
-      onChange={onChange}
-    />
-  </div>
-));
+function formatPercent(value) {
+  return `${Math.round(Number(value) * 100)}%`;
+}
+
+function getErrorMessage(error) {
+  return (
+    error?.response?.data?.detail ||
+    error?.message ||
+    'Something went wrong while talking to the backend.'
+  );
+}
+
+function StatusBadge({ status }) {
+  return <span className={`status-badge status-${status || 'idle'}`}>{status || 'idle'}</span>;
+}
 
 function App() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [currentTransportMode, setCurrentTransportMode] = useState('');
-  const [currentSliderValue, setCurrentSliderValue] = useState('0.5');
-  const [currentTextInput, setCurrentTextInput] = useState('');
-  const [answers, setAnswers] = useState([]);
-  const [completed, setCompleted] = useState(false);
-  const [processedResults, setProcessedResults] = useState(null);
-  const [animateLeft, setAnimateLeft] = useState(false);
+  const [answers, setAnswers] = useState(initialAnswers);
+  const [result, setResult] = useState(null);
+  const [questionnaireBusy, setQuestionnaireBusy] = useState(false);
+  const [questionnaireError, setQuestionnaireError] = useState('');
 
-  useEffect(() => {
-    const storedAnswers = localStorage.getItem('answers');
-    console.log("once", storedAnswers)
-    if (storedAnswers) {
-      setAnswers(JSON.parse(storedAnswers));
-    }
-  }, []);
+  const [computerForm, setComputerForm] = useState(initialComputerForm);
+  const [computerSession, setComputerSession] = useState(null);
+  const [computerBusy, setComputerBusy] = useState(false);
+  const [computerError, setComputerError] = useState('');
 
-  useEffect(() => {
-    localStorage.setItem('answers', JSON.stringify(answers));
-    console.log("often", answers)
-  }, [answers]);
+  const serializedAnswers = [
+    `${answers.transportMode}, ${answers.transportFrequency}`,
+    answers.flights,
+    answers.compost,
+    answers.recycleFrequency,
+    answers.diet,
+  ];
 
-  const handleSubmit = async (event) => {
-    console.log("====================================================")
+  const updateAnswer = (field) => (event) => {
+    setAnswers((current) => ({
+      ...current,
+      [field]: event.target.value,
+    }));
+  };
 
-    event.preventDefault();
-    console.log("?????????????????????????????????????????????????????")
+  const updateComputerForm = (field) => (event) => {
+    const value =
+      field === 'display_width' ||
+      field === 'display_height' ||
+      field === 'max_steps_per_run'
+        ? Number(event.target.value)
+        : event.target.value;
 
-    let answer = currentTextInput;
-    const updatedAnswers = [...answers, answer];
+    setComputerForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
 
-    // Convert the updatedAnswers array to a JSON string
-    const answersJson = JSON.stringify(updatedAnswers);
-
-    // Set the answers state
-    setAnswers(updatedAnswers);
-
-    // Set the completed state (assuming you want to set it)
-    setCompleted(true);
-
-    // Save the JSON string to local storage
-    localStorage.setItem('answers', answersJson);
+  const runComputerRequest = async (request) => {
+    setComputerBusy(true);
+    setComputerError('');
 
     try {
-      // Send the JSON string to the backend
-      const response = await fetch('http://localhost:8000/submit_answers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ answers: answersJson })
-      });
-
-      if (true) {
-        const processedData = await response.json();
-
-        console.log(processedData, "====================================================")
-
-        // Split the output string into an array of values
-        const outputValues = processedData.output.split(',');
-
-
-        // Ensure there are at least 8 values in the array
-        if (outputValues.length >= 8) {
-          value1 = outputValues[0] //.trim().replace(/['\[\]]/g, '').replace(/\.\.\/React\/questionnaire-app\/public\//g, '');
-          value2 = outputValues[1] //.trim().replace(/'/g, '').replace(/\.\.\/React\/questionnaire-app\/public\//g, '');
-          value3 = outputValues[2] //.trim().replace(/\[|\]/g, '');
-          value4 = outputValues[3] //.trim().replace(/\[|\]/g, '');
-          value5 = outputValues[4] //.trim().replace(/['\[\]]/g, '').replace(/\.\.\/React\/questionnaire-app\/public\//g, '');
-          value6 = outputValues[5] //.trim();
-          value7 = outputValues[6] //.trim().replace(/\[|\]/g, '');
-          value8 = outputValues[7] //.trim().replace(/['\[\]]/g, '');
-
-          // Now you can use value1, value2, ..., value8 as needed
-        } else {
-          // Handle errors, if the response is not okay
-          console.error('Server responded with status:', response.status);
-        }
-      } else {
-        // Handle errors, if the response is not okay
-        console.error('Server responded with status:', response.status);
-      }
+      const nextSession = await request;
+      setComputerSession(nextSession);
     } catch (error) {
-      // Handle network or other errors
-      console.error('Error:', error);
-    }
-
-    return false;
-  };
-
-  const handleNext = () => {
-    let answer;
-    setAnimateLeft(false);
-    if (currentQuestionIndex === 0) {
-      answer = `${currentTransportMode}, ${currentSliderValue}`;
-    } else if (currentQuestionIndex === 3) {
-      answer = currentSliderValue;
-    } else {
-      answer = currentTextInput;
-    }
-
-    const updatedAnswers = [...answers];
-    updatedAnswers[currentQuestionIndex] = answer;
-    setAnswers(updatedAnswers);
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setCurrentTextInput('');
-      setCurrentSliderValue('0.5'); // Reset slider for the next use if needed
-    } else {
-      console.log(updatedAnswers);
+      setComputerError(getErrorMessage(error));
+    } finally {
+      setComputerBusy(false);
     }
   };
 
-  const handleTextInputChange = (e) => {
-    setCurrentTextInput(e.target.value);
+  const handleQuestionnaireSubmit = async (event) => {
+    event.preventDefault();
+    setQuestionnaireBusy(true);
+    setQuestionnaireError('');
+
+    try {
+      const nextResult = await submitAnswers(serializedAnswers);
+      setResult(nextResult);
+    } catch (error) {
+      setQuestionnaireError(getErrorMessage(error));
+    } finally {
+      setQuestionnaireBusy(false);
+    }
   };
 
-  const handleTransportChange = (e) => {
-    setCurrentTransportMode(e.target.value);
+  const handleComputerStart = async (event) => {
+    event.preventDefault();
+    setComputerSession(null);
+    await runComputerRequest(startComputerSession(computerForm));
   };
 
-  const handleSliderChange = (e) => {
-    setCurrentSliderValue(e.target.value);
+  const handleComputerRefresh = async () => {
+    if (!computerSession) {
+      return;
+    }
+    await runComputerRequest(fetchComputerSession(computerSession.id));
   };
-  console.log(value1)
-  return completed ? (
-    <div>
-      <h1>Results</h1>
-      <p>Question 1</p><img src="public/plot_3f9d5c34-524d-401c-affe-44bec1255f50.png" alt="Value 1" />
-      <p>Question 2</p><img src="public/plot_7ab6a38f-8727-4251-a55d-ae08a387d07b.png" alt="Value 2" />
-      <p>Question 3</p><img src="public/plot_7f4ff233-8763-4d38-b238-40e9e5827193.png" alt="Value 3" />
-      <p>Question 4</p><img src="public/plot_4017ea56-c42f-4c54-a648-dd6f63241d9a.png" alt="Value 4" />
-      <p>Question 5</p><img src="public/plot_aa6a38a5-7f55-453f-8d20-d00ee9fd9474.png" alt="Value 5" />
 
-      <p>Purity Score: 84</p>
-      <p>You're a Green Sage! Nearly at the pinnacle of eco-wisdom. Your sustainable actions are a beacon of hope!"</p>
-      <p>Your Hero:</p> <img src={/Users/erictan/Desktop/ConUHacks8/not-finance-bros/React/questionnaire-app/public/75-85.png} alt="Your Hero" />
-    </div>
-  ) : (
-    <div>
-      <header className="header">
-        <img src="/realLogo.png" className="logo-left" />
-        <h1>Montreal Environmental Purity Score</h1>
-        <img src="/realLogo.png" className="logo-right" />
+  const handleComputerContinue = async () => {
+    if (!computerSession) {
+      return;
+    }
+    await runComputerRequest(continueComputerSession(computerSession.id));
+  };
+
+  const handleComputerApproval = async (approved) => {
+    if (!computerSession) {
+      return;
+    }
+    await runComputerRequest(approveComputerSession(computerSession.id, approved));
+  };
+
+  return (
+    <div className="page-shell">
+      <header className="hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Montreal Environmental Purity Score</p>
+          <h1>Repair the app and inspect it with OpenAI Computer Use.</h1>
+          <p className="hero-body">
+            The questionnaire now uses a structured FastAPI response, and the side panel can
+            launch a Computer Use session against the local frontend with explicit approval gates.
+          </p>
+        </div>
+        <div className="hero-mark">
+          <img src="/realLogo.png" alt="MEPS logo" />
+        </div>
       </header>
-      <div className="separator"></div>
-      <div className='About'>
-        <section className="website-description">
-          <div className="text-container">
-            <h2>About</h2>
-            <p>
-              Welcome to the Montreal Environmental Purity Score (MEPS) website. This platform aims to gather information about your environmental habits to assess your environmental impact. Your responses to the following questions will help us calculate your environmental purity score.
-            </p>
+
+      <main className="workspace">
+        <section className="panel questionnaire-panel">
+          <div className="panel-header">
+            <div>
+              <p className="panel-label">Questionnaire</p>
+              <h2>Environmental purity survey</h2>
+            </div>
+            <img src="/logo.png" alt="Eco hero mascot" className="panel-art" />
           </div>
-          <div className="image-container">
-            <h3>This could be <br></br>YOU</h3>
-            <img src="/logo.png" className="" />
-          </div>
-        </section>
-      </div>
-      <div className='Invitation'>
-        <section className="website-invitation">
-          <h2>Answer questions to learn about your eco-rank</h2>
-        </section>
-      </div>
-      <div className="App">
-        <section className="questionnaire">
-          <Question question={questions[currentQuestionIndex]}>
-            {currentQuestionIndex === 0 ? (
-              <>
-                <RadioGroup
-                  options={transportationModes}
-                  selectedValue={currentTransportMode}
-                  onChange={handleTransportChange}
+
+          <form onSubmit={handleQuestionnaireSubmit} className="questionnaire-form">
+            <article className="question-card">
+              <h3>1. What&apos;s your preferred method of transportation?</h3>
+              <div className="option-grid">
+                {transportOptions.map((option) => (
+                  <label key={option} className="option-tile">
+                    <input
+                      type="radio"
+                      name="transportMode"
+                      value={option}
+                      checked={answers.transportMode === option}
+                      onChange={updateAnswer('transportMode')}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="slider-field">
+                <div className="slider-copy">
+                  <span>How often do you use it?</span>
+                  <strong>{formatPercent(answers.transportFrequency)}</strong>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={answers.transportFrequency}
+                  onChange={updateAnswer('transportFrequency')}
                 />
-                <RangeSlider
-                  value={currentSliderValue}
-                  onChange={handleSliderChange}
+              </div>
+            </article>
+
+            <article className="question-card">
+              <h3>2. How many times do you travel by airplane per year?</h3>
+              <div className="option-grid compact-grid">
+                {flightOptions.map((option) => (
+                  <label key={option} className="option-tile">
+                    <input
+                      type="radio"
+                      name="flights"
+                      value={option}
+                      checked={answers.flights === option}
+                      onChange={updateAnswer('flights')}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </article>
+
+            <article className="question-card">
+              <h3>3. Do you compost?</h3>
+              <div className="option-grid compact-grid">
+                {compostOptions.map((option) => (
+                  <label key={option} className="option-tile">
+                    <input
+                      type="radio"
+                      name="compost"
+                      value={option}
+                      checked={answers.compost === option}
+                      onChange={updateAnswer('compost')}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </article>
+
+            <article className="question-card">
+              <h3>4. How often do you recycle?</h3>
+              <div className="slider-field">
+                <div className="slider-copy">
+                  <span>Recycling frequency</span>
+                  <strong>{formatPercent(answers.recycleFrequency)}</strong>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={answers.recycleFrequency}
+                  onChange={updateAnswer('recycleFrequency')}
                 />
-              </>
-            ) : currentQuestionIndex === 1 ? (
-              <RadioGroup
-                options={numAirplane}
-                selectedValue={currentTextInput}
-                onChange={handleTextInputChange}
-              />
-            ) : currentQuestionIndex === 2 ? (
-              <RadioGroup
-                options={radioCompost}
-                selectedValue={currentTextInput}
-                onChange={handleTextInputChange}
-              />
-            ) : currentQuestionIndex === 3 ? (
-              <RangeSlider
-                value={currentSliderValue}
-                onChange={handleSliderChange}
-              />
-            ) : currentQuestionIndex === 4 ? (
-              <RadioGroup
-                options={radioDiet}
-                selectedValue={currentTextInput}
-                onChange={handleTextInputChange}
-              />
-            ) : (
-              <input
-                type="text"
-                value={currentTextInput}
-                onChange={handleTextInputChange}
-              />
-            )}
-          </Question>
-          <div className="center-button">
-            <button type="button" onClick={currentQuestionIndex === questions.length - 1 ? handleSubmit : handleNext}>
-              {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
+              </div>
+            </article>
+
+            <article className="question-card">
+              <h3>5. What is your diet?</h3>
+              <div className="option-grid compact-grid">
+                {dietOptions.map((option) => (
+                  <label key={option} className="option-tile">
+                    <input
+                      type="radio"
+                      name="diet"
+                      value={option}
+                      checked={answers.diet === option}
+                      onChange={updateAnswer('diet')}
+                    />
+                    <span>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </article>
+
+            {questionnaireError ? <p className="error-text">{questionnaireError}</p> : null}
+
+            <button className="primary-button" type="submit" disabled={questionnaireBusy}>
+              {questionnaireBusy ? 'Scoring...' : 'Calculate purity score'}
             </button>
+          </form>
+        </section>
+
+        <section className="panel computer-panel">
+          <div className="panel-header panel-header-tight">
+            <div>
+              <p className="panel-label">Computer Use</p>
+              <h2>Local inspector</h2>
+            </div>
+            <StatusBadge status={computerSession?.status} />
+          </div>
+
+          <form onSubmit={handleComputerStart} className="computer-form">
+            <label className="field">
+              <span>Target URL</span>
+              <input
+                type="url"
+                value={computerForm.url}
+                onChange={updateComputerForm('url')}
+                placeholder="http://127.0.0.1:3000"
+              />
+            </label>
+
+            <label className="field">
+              <span>Task</span>
+              <textarea
+                rows="5"
+                value={computerForm.task}
+                onChange={updateComputerForm('task')}
+              />
+            </label>
+
+            <div className="inline-fields">
+              <label className="field">
+                <span>Width</span>
+                <input
+                  type="number"
+                  min="640"
+                  max="2560"
+                  value={computerForm.display_width}
+                  onChange={updateComputerForm('display_width')}
+                />
+              </label>
+              <label className="field">
+                <span>Height</span>
+                <input
+                  type="number"
+                  min="480"
+                  max="1600"
+                  value={computerForm.display_height}
+                  onChange={updateComputerForm('display_height')}
+                />
+              </label>
+              <label className="field">
+                <span>Step budget</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="25"
+                  value={computerForm.max_steps_per_run}
+                  onChange={updateComputerForm('max_steps_per_run')}
+                />
+              </label>
+            </div>
+
+            {computerError ? <p className="error-text">{computerError}</p> : null}
+
+            <div className="button-row">
+              <button className="primary-button" type="submit" disabled={computerBusy}>
+                {computerBusy ? 'Launching...' : 'Start session'}
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={handleComputerContinue}
+                disabled={!computerSession || computerBusy}
+              >
+                Continue
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={handleComputerRefresh}
+                disabled={!computerSession || computerBusy}
+              >
+                Refresh
+              </button>
+            </div>
+          </form>
+
+          {computerSession ? (
+            <div className="session-view">
+              <div className="session-meta">
+                <p>
+                  <strong>Current URL:</strong> {computerSession.current_url || 'Not available yet'}
+                </p>
+                <p>
+                  <strong>Allowed hosts:</strong> {computerSession.allowed_hosts.join(', ')}
+                </p>
+                <p>
+                  <strong>Steps executed:</strong> {computerSession.steps_executed}
+                </p>
+              </div>
+
+              {computerSession.latest_output_text ? (
+                <div className="assistant-note">
+                  <p className="panel-label">Assistant output</p>
+                  <p>{computerSession.latest_output_text}</p>
+                </div>
+              ) : null}
+
+              {computerSession.pending_safety_checks?.length ? (
+                <div className="approval-box">
+                  <p className="panel-label">Approval required</p>
+                  {computerSession.pending_safety_checks.map((check) => (
+                    <article key={check.id} className="approval-item">
+                      <strong>{check.code || 'Safety check'}</strong>
+                      <p>{check.message || 'The model requested user approval before continuing.'}</p>
+                    </article>
+                  ))}
+                  <div className="button-row">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() => handleComputerApproval(true)}
+                      disabled={computerBusy}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="danger-button"
+                      type="button"
+                      onClick={() => handleComputerApproval(false)}
+                      disabled={computerBusy}
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {computerSession.last_error ? (
+                <div className="error-panel">
+                  <p className="panel-label">Session error</p>
+                  <p>{computerSession.last_error}</p>
+                </div>
+              ) : null}
+
+              {computerSession.screenshot_url ? (
+                <div className="screenshot-shell">
+                  <img
+                    src={toImageUrl(computerSession.screenshot_url)}
+                    alt="Latest browser screenshot"
+                  />
+                </div>
+              ) : null}
+
+              <div className="event-feed">
+                <p className="panel-label">Recent events</p>
+                <ul>
+                  {computerSession.event_log.map((entry) => (
+                    <li key={`${entry.timestamp}-${entry.kind}`}>
+                      <span>{entry.kind}</span>
+                      <p>{entry.message}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      </main>
+
+      {result ? (
+        <section className="panel results-panel">
+          <div className="panel-header panel-header-tight">
+            <div>
+              <p className="panel-label">Results</p>
+              <h2>Your current eco rank</h2>
+            </div>
+            <div className="score-pill">{result.score}</div>
+          </div>
+
+          <div className="results-summary">
+            <div className="badge-shell">
+              <img src={`/${result.badge_image}`} alt="Eco rank badge" />
+            </div>
+            <div className="summary-copy">
+              <h3>{result.message}</h3>
+              <p>
+                The score is computed from the questionnaire and returned as structured JSON from
+                FastAPI, so the UI no longer relies on parsing a Python string representation.
+              </p>
+              <code>{JSON.stringify(serializedAnswers)}</code>
+            </div>
+          </div>
+
+          <div className="graph-grid">
+            {result.graphs.map((graphUrl, index) => (
+              <figure key={graphUrl} className="graph-card">
+                <img src={toImageUrl(graphUrl)} alt={`Question ${index + 1} distribution`} />
+                <figcaption>Question {index + 1}</figcaption>
+              </figure>
+            ))}
           </div>
         </section>
-      </div>
+      ) : null}
     </div>
   );
 }

@@ -1,51 +1,71 @@
-Be an Eco Hero! Our web app reveals your nature-saving superpowers with fun & friendship. Join the green adventure & protect Earth!
+# Montreal Environmental Purity Score
 
-## Steps to run the WebApp locally
-- Clone the repository
-- Make sure to have Node.js and Python installed
-- Open the terminal and input the following commands:
-  * source env/bin/activate
-  * pip3 install sqlalchemy pydantic uvicorn
-  * cd FastAPI
-  * uvicorn main:app -- reload
-  * cd questionnaire-app 
-  * npm start
+This repo now contains two working flows:
 
+1. A repaired questionnaire UI that submits structured data to FastAPI and renders the returned score, badge, and graph URLs cleanly.
+2. A local OpenAI Computer Use inspector that can open the web app in a Playwright browser, execute model-requested actions, return screenshots, and pause for approval when the API signals safety checks.
 
-## ¬(finance-bros) Team members
-| Name  | Field of Study  |
-| ------------- | ------------- |
-| Kevin Yang  | Software Engineering  |
-| Eric Tan  | Software Engineering  |
-| Shan Gao  | Mathematics and Computer Science  |
-| Alex Le  | Actuarial Mathematics  |
+## Stack
 
+- React 18 (`React/questionnaire-app`)
+- FastAPI (`FastAPI`)
+- OpenAI Responses API with the `computer-use-preview` model and `computer_use_preview` tool
+- Playwright for local browser execution
 
-##  Built with
-- Excel
-- FastAPI
-- Figma
-- Matplotlib
+## Prerequisites
+
 - Node.js
-- NumPy
-- Python
-- React.js
+- Python 3.10+
+- An `OPENAI_API_KEY` in the backend environment
 
+## Backend Setup
 
-## Inspiration
-Our inspiration was to help people understand their current contribution to the environment and help them improve by increasing their hero score!
+From the repo root:
 
-## What it does
-Our project is a web application that quizzes the user on their environmental activities. Using the data collected from Montreal Open Data, as well as other datasets, we were able to attribute a purity score to each question and give a Montreal Environmental Purity Score (MEPS).
+```powershell
+python -m pip install fastapi sqlalchemy uvicorn matplotlib numpy scipy openai playwright
+python -m playwright install chromium
+cd FastAPI
+uvicorn main:app --reload
+```
 
-## How we built it
-First, we analyzed the data from different datasets using Python libraries such as numpy and matplotlib. Using these data we created an algorithm that would attribute a score to an answer depending on its relation to the datasets. We then utilized our software engineering skills and the FastAPI and React framework to create a web application that would be able to host the quiz and provide a fun UI/UX to the user.
+The backend serves:
 
-## Challenges we ran into
-The most challenging, yet fun obstacle was to find an interesting question that can be answered in a unique way. There were many interesting datasets to choose from but the environmental aspect of the project resonated with our values as well as DRW's! Our team is like a superhero squad where everyone brings their own unique power to the table - from software engineering to math whizzes, computer science buffs, and actuarial science aces. It's like assembling a dream team for the ultimate project! We decided to tackle the DRW challenge, where each of us could unleash our talents and really sparkle as we dive into the thrilling journey of project development.
+- `POST /submit_answers`
+- `POST /computer-use/sessions`
+- `GET /computer-use/sessions/{session_id}`
+- `POST /computer-use/sessions/{session_id}/continue`
+- `POST /computer-use/sessions/{session_id}/approval`
 
-## Accomplishments that we're proud of
-We are proud to participate to our first hackathon and provide a functioning MVP!
+Generated graphs and browser screenshots are served from `/static/...`.
 
-## What we learned
-We learned the intricacies of data analysis and the development cycle of a project from scratch
+## Frontend Setup
+
+In a second terminal:
+
+```powershell
+cd React/questionnaire-app
+npm install
+npm start
+```
+
+The local app runs on `http://localhost:3000` and the API is expected on `http://localhost:8000`.
+
+## Computer Use Notes
+
+- The browser harness is implemented in [computer_use.py](/C:/Users/eric.tan/Montreal-Environmental-Purity-Score/FastAPI/computer_use.py).
+- The React control panel is in [App.js](/C:/Users/eric.tan/Montreal-Environmental-Purity-Score/React/questionnaire-app/src/App.js).
+- Sessions default to a localhost allow-list and will fail if the page navigates outside the approved hosts.
+- If the OpenAI response contains `pending_safety_checks`, the backend stops and the frontend shows explicit `Approve` and `Deny` actions before continuing.
+- Each continue cycle has a step budget so the browser loop does not run indefinitely inside one request.
+
+## Verification
+
+The following checks were run during implementation:
+
+- `python` `py_compile` on the FastAPI modules
+- FastAPI `TestClient` smoke test for `/submit_answers`
+- `npm run build`
+- `npm test -- --watchAll=false`
+- Playwright smoke test for screenshot capture
+- Live Computer Use session against a local static page via `/computer-use/sessions`

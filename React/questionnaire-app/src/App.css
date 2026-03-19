@@ -1,250 +1,505 @@
-/* Basic reset for styling */
+:root {
+  --page-bg: #f7f4e8;
+  --panel-bg: rgba(255, 252, 245, 0.92);
+  --panel-border: rgba(17, 24, 39, 0.08);
+  --ink: #18261d;
+  --muted: #5b665f;
+  --accent: #115e59;
+  --accent-strong: #0f766e;
+  --accent-soft: #d7f3e7;
+  --sun: #f59e0b;
+  --danger: #b91c1c;
+  --shadow: 0 24px 60px rgba(21, 45, 37, 0.12);
+  --radius-xl: 28px;
+  --radius-lg: 18px;
+}
+
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
-/* CSS for the About section */
-.About {
-  display: flex;
-  flex-direction: row; /* Arrange containers horizontally */
-  margin-top: 100px;
-  margin-bottom: 100px;
-  margin-left: 15%;
-  margin-right: 15%;
-}
-
-/* Style for the content container */
-.content-container {
-  display: flex; /* Display its children horizontally */
-  align-items: center; /* Vertically center the content within the container */
-  flex: 1; /* Allow the container to grow and take available space */
-}
-
-/* Style for the text container */
-.text-container {
-  flex: 1; /* Allow the text container to grow and take available space */
-}
-
-.Invitation {
-  text-align: center;
-}
-.text-container h2 {
-  font-size: 1.5em;
-}
-
-/* CSS for the container */
-.image-container {
-  text-align: right;
-  padding-top: 30px;
-  display: flex; /* Display its children horizontally */
-  align-items: center; /* Vertically center the content within the container */
-}
-
-/* Style for the <h3> element */
-.image-container h3 {
-  margin-left: 15px;
-  margin-right: 120px !important; /* Adjust the margin to control the space between the heading and the image */
-}
-
-.image-container img {
-  max-width: 60%; /* Ensure the image fits within its container */
-}
-
-.container svg {
-  width: 20px; /* Adjust the width of the arrow */
-  height: 40px; /* Adjust the height of the arrow */
-}
-
-
-
-/* Set a font that is clean and modern, such as Arial or Helvetica */
-body, input, button {
-  font-family: 'Arial', sans-serif;
-  color: #2e2e2e; /* A dark color for text */
-}
-
-/* Set a light background color that complements the low-poly aesthetic */
 body {
-  background: linear-gradient(to bottom, #BCEE8B, #61BAC6, #BCEE8B);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  margin-bottom: 200px;
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(17, 94, 89, 0.22), transparent 26%),
+    linear-gradient(180deg, #f6efd7 0%, #edf6f0 48%, #f7f4e8 100%);
 }
 
-/* CSS for the header separator with wavy form */
-.separator {
-  position: relative;
-  height: 10px; /* Adjust the height as needed */
-  background-color: #61BAC6; /* Background color for the separator */
+button,
+input,
+textarea {
+  font: inherit;
 }
 
-.separator::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 10px; /* Adjust the height of the waves */
-  background: repeating-linear-gradient(90deg, transparent, transparent 5px, #BCEE8B 5px, #BCEE8B 10px);
+img {
+  max-width: 100%;
+  display: block;
 }
 
-
-
-
-.header {
-  background: linear-gradient(to bottom, #dea940, #d8ee8b); /* Gradient background */
-  padding: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  color: white; /* Text color for better contrast */
-  font-size: 28px;
-  padding-top: 30px;
+.page-shell {
+  width: min(1360px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
 }
 
-.logo-left {
-  position: absolute;
-  top: 10px;
-  right: 5px;
-  height: 75px; /* Adjust the height as needed */
-  padding-right: 20px; /* Adjust the padding to control the distance between the image and the right edge */
-  display: flex;
-  align-items: center;
+.hero {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 28px;
 }
 
-.logo-right {
-  position: absolute;
-  top: 10px;
-  left: 5px;
-  height: 75px; /* Adjust the height as needed */
-  padding-left: 20px; /* Adjust the padding to control the distance between the image and the right edge */
-  display: flex;
-  align-items: center;
+.hero-copy,
+.hero-mark {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(238, 248, 242, 0.92));
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
 }
 
-/* Style the main application container */
-.App {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 20px;
-  background-image: radial-gradient(#c0f25d, rgb(186, 235, 133));
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border-radius: 20px;
+.hero-copy {
+  padding: 32px;
 }
 
-/* Style the question headers */
-h1 {
-  color: #333;
-  margin-bottom: 30px;
-  font-size: 1.5em;
+.hero-copy h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(2.1rem, 4vw, 3.8rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
 }
 
-.slide-left {
-  animation: slideLeft 500ms forwards;
+.hero-body {
+  max-width: 58ch;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
 }
 
-.slide-right {
-  animation: slideRight 500ms forwards;
+.hero-mark {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(150deg, rgba(17, 94, 89, 0.08), rgba(245, 158, 11, 0.16)),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(240, 250, 244, 0.94));
 }
 
-@keyframes slideLeft {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
-  }
+.hero-mark img {
+  width: min(280px, 100%);
+  filter: drop-shadow(0 18px 32px rgba(17, 94, 89, 0.2));
 }
 
-@keyframes slideRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+.workspace {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 24px;
 }
 
-
-/* Style the groups of radio buttons and the slider */
-.radio-group, .slider-container {
-  margin: 20px 0;
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
 }
 
-/* Style individual labels and inputs for radio buttons */
-.radio-group label {
-  display: inline-block;
-  margin: 22px;
-  font-weight: normal;
-  color: #666;
+.questionnaire-panel,
+.computer-panel,
+.results-panel {
+  padding: 28px;
 }
 
-/* Style the slider container */
-.slider-container {
-  margin: 20px 0;
+.results-panel {
+  margin-top: 24px;
 }
 
-/* Style the labels that accompany sliders */
-.labels {
+.panel-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
-/* Improve the visual styling of the range input (slider) */
-input[type="range"] {
-  -webkit-appearance: none;  /* Override default CSS styles */
-  appearance: none;
-  width: 100%;
-  height: 5px;
-  background: #ffffff;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
+.panel-header-tight {
+  align-items: flex-start;
 }
 
-/* Style the slider thumb */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 25px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
+.panel-label,
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
-/* Style the button for navigation */
-button {
-  background-color: #4CAF50;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.panel-header h2 {
+  margin: 6px 0 0;
+  font-size: 1.85rem;
+  line-height: 1.02;
 }
 
-/* CSS to center-align the button */
-.center-button {
+.panel-art {
+  width: 96px;
+}
+
+.questionnaire-form,
+.computer-form {
+  display: grid;
+  gap: 16px;
+}
+
+.question-card,
+.assistant-note,
+.approval-box,
+.error-panel,
+.session-meta {
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.76);
+  padding: 18px;
+}
+
+.question-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.08rem;
+}
+
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compact-grid {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.option-tile {
   display: flex;
-  justify-content: center;
-  margin-top: 30px; /* Adjust the margin as needed */
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(240, 250, 244, 0.9), rgba(255, 248, 236, 0.9));
+  border: 1px solid rgba(17, 94, 89, 0.12);
+  cursor: pointer;
 }
 
-
-button:hover {
-  background-color: #388E3C;
+.option-tile input {
+  margin-top: 2px;
+  accent-color: var(--accent-strong);
 }
 
-/* Add media query for responsive adjustments */
-@media (max-width: 768px) {
-  .App {
-      margin: 20px;
+.slider-field {
+  display: grid;
+  gap: 10px;
+}
+
+.slider-copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent-strong);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  font-weight: 700;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.inline-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: transform 180ms ease, opacity 180ms ease, background 180ms ease;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #0f766e, #115e59);
+  color: #fff;
+}
+
+.secondary-button {
+  background: rgba(17, 94, 89, 0.08);
+  color: var(--accent);
+}
+
+.danger-button {
+  background: rgba(185, 28, 28, 0.1);
+  color: var(--danger);
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.danger-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.status-badge {
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: rgba(17, 94, 89, 0.12);
+  color: var(--accent);
+}
+
+.status-completed {
+  background: rgba(17, 94, 89, 0.14);
+}
+
+.status-awaiting_approval,
+.status-paused {
+  background: rgba(245, 158, 11, 0.18);
+  color: #9a5b00;
+}
+
+.status-error,
+.status-denied {
+  background: rgba(185, 28, 28, 0.14);
+  color: var(--danger);
+}
+
+.session-view {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.session-meta p,
+.assistant-note p,
+.error-panel p,
+.summary-copy p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.assistant-note p:last-child,
+.error-panel p:last-child {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.approval-item {
+  padding: 12px 0;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.approval-item:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.approval-item p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.screenshot-shell {
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  background: #09241e;
+  min-height: 260px;
+}
+
+.screenshot-shell img {
+  width: 100%;
+  object-fit: cover;
+}
+
+.event-feed ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.event-feed li {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(17, 94, 89, 0.06);
+}
+
+.event-feed span {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.event-feed p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.results-summary {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.badge-shell {
+  padding: 18px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.28), transparent 35%),
+    linear-gradient(180deg, rgba(240, 250, 244, 0.96), rgba(255, 248, 236, 0.96));
+  border: 1px solid rgba(17, 94, 89, 0.12);
+}
+
+.summary-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.summary-copy h3 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.summary-copy code {
+  display: inline-block;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(24, 38, 29, 0.06);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.score-pill {
+  min-width: 76px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(17, 94, 89, 0.18));
+}
+
+.graph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.graph-card {
+  margin: 0;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.graph-card figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.error-text {
+  margin: 0;
+  color: var(--danger);
+}
+
+@media (max-width: 1080px) {
+  .hero,
+  .workspace,
+  .results-summary {
+    grid-template-columns: 1fr;
   }
 
-  .radio-group label, .labels span {
-      font-size: 0.9em;
+  .hero-mark {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    width: min(100vw - 20px, 100%);
+    padding-top: 18px;
+  }
+
+  .hero-copy,
+  .hero-mark,
+  .questionnaire-panel,
+  .computer-panel,
+  .results-panel {
+    padding: 20px;
+  }
+
+  .option-grid,
+  .inline-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .button-row {
+    flex-direction: column;
+  }
+
+  .panel-art {
+    width: 72px;
   }
 }
